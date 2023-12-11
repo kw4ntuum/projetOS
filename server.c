@@ -21,26 +21,40 @@ typedef struct __Buffer {
 
 // Update the InodeMap with the given inodeNumber and block mapping.
 void UpdateInodeMap(int inodeNumber, int block) {
-    InodeMap[inodeNumber/16][inodeNumber%16] = block;
+    int row = inodeNumber / 16;
+    int col = inodeNumber % 16;
+    InodeMap[row][col] = block;
 }
 
 // Retrieve the block mapping for the given inodeNumber.
 int GetInodeBlock(int inodeNumber) {
     return InodeMap[inodeNumber/16][inodeNumber%16];
 }
+int IsValidInodeNumber(int inodeNumber) {
+    return (inodeNumber >= 0 && inodeNumber < NumInodes);
+}
 
+int CalculateInodeBlockIndex(int inodeNumber) {
+    return InodeMap[inodeNumber / 16][inodeNumber % 16];
+}
 // Retrieve the Inode information for the given inodeNumber.
+
 int GetInode(int inodeNumber, Inode* inode) {
-    if (inodeNumber < 0 || inodeNumber >= NumInodes) {
-        printf("Error: Invalid inode number\n");
+    if (!IsValidInodeNumber(inodeNumber)) {
+        printf("Erreur : GetInode - inodeNumber invalide\n");
         return -1;
     }
-    int inodeBlock = GetInodeBlock(inodeNumber);
+
+    int inodeBlock = CalculateInodeBlockIndex(inodeNumber);
+    if (inodeBlock == -1) {
+        printf("Erreur : GetInode - Échec de récupération du bloc d'inode\n");
+        return -1;
+    }
+
     lseek(FileSystemDescriptor, inodeBlock * BLOCKSIZE, SEEK_SET);
     read(FileSystemDescriptor, inode, sizeof(Inode));
     return 0;
 }
-
 // Get a block for a new file or directory.
 int GetBlock(int isFirstBlock, int inodeNumber, int parentInodeNumber) {
     DirectoryEntries directoryBlock;
@@ -584,4 +598,9 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+
+
+
+
 
